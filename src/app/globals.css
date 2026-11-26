@@ -130,6 +130,24 @@ body {
   95% { transform: rotate(3deg); }
 }
 
+.anim-reel { animation: reel 0.12s linear infinite; }
+@keyframes reel {
+  0% { transform: translateY(-3px); }
+  50% { transform: translateY(3px); }
+  100% { transform: translateY(-3px); }
+}
+
+.anim-lever { animation: lever 0.8s ease-out; }
+@keyframes lever {
+  30% { transform: scaleY(-0.6); }
+}
+
+.anim-shake { animation: shake 0.4s ease-in-out; }
+@keyframes shake {
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
 /* ---------- Popup xác nhận thoát ---------- */
 .dialog-backdrop { animation: fade-in 0.2s ease-out both; }
 @keyframes fade-in { from { opacity: 0; } }

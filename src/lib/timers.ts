@@ -15,6 +15,8 @@ export function isLevel(v: unknown): v is Level {
 
 export type TimerTheme = {
   slug: string;
+  /** Kiểu bộ đếm: mặc định chạy theo thời gian; "lucky" = quay số đến khi trúng */
+  kind?: "lucky";
   /** Chế độ mặc định của bộ đếm, dùng để lọc ở trang chủ */
   level: Level;
   /** Tên đầy đủ, dùng làm tiêu đề trang */
@@ -254,6 +256,27 @@ export const TIMERS: TimerTheme[] = [
       "Còn một nửa cái pizza.",
       "Chỉ còn vài miếng thôi!",
       "Miếng cuối cùng!",
+    ],
+  },
+  {
+    slug: "random-trung-so",
+    kind: "lucky",
+    level: "hell",
+    title: "Tập trung cho đến khi random trúng số bạn chọn",
+    short: "Random trúng số",
+    emoji: "🎰",
+    description: "Chọn một con số may mắn, máy quay số liên tục. Khi nào ra đúng số của bạn thì xong!",
+    bg: "#ede9fe",
+    accent: "#7c3aed",
+    doneTitle: "Trúng rồi! 🎰",
+    doneMessage: "Con số may mắn của bạn cuối cùng cũng xuất hiện. Hôm nay bạn hên thật!",
+    exitWarning: "Lỡ lần quay tiếp theo trúng thì sao? Thoát là mất hết lượt quay đó!",
+    milestones: [
+      "Máy đang quay, giữ vững niềm tin!",
+      "Chưa trúng thì tập trung tiếp...",
+      "Kiên nhẫn là chìa khoá của may mắn.",
+      "Con số của bạn đang trên đường tới!",
+      "Trời không phụ lòng người chăm chỉ!",
     ],
   },
 ];

@@ -11,6 +11,7 @@ import BatteryScene from "./BatteryScene";
 import EggScene from "./EggScene";
 import SunsetScene from "./SunsetScene";
 import PizzaScene from "./PizzaScene";
+import LuckyScene from "./LuckyScene";
 
 export const SCENES: Record<string, ComponentType<SceneProps>> = {
   "da-tan": IceScene,
@@ -24,6 +25,7 @@ export const SCENES: Record<string, ComponentType<SceneProps>> = {
   "trung-no": EggScene,
   "mat-troi-lan": SunsetScene,
   pizza: PizzaScene,
+  "random-trung-so": LuckyScene,
 };
 
 export type { SceneProps };

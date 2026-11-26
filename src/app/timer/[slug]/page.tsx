@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import LuckyRunner from "@/components/LuckyRunner";
 import TimerRunner from "@/components/TimerRunner";
 import { TIMERS, getTimer } from "@/lib/timers";
 
@@ -18,6 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TimerPage({ params }: Props) {
   const { slug } = await params;
-  if (!getTimer(slug)) notFound();
-  return <TimerRunner slug={slug} />;
+  const timer = getTimer(slug);
+  if (!timer) notFound();
+  return timer.kind === "lucky" ? <LuckyRunner slug={slug} /> : <TimerRunner slug={slug} />;
 }

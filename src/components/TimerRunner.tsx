@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import Confetti from "./Confetti";
 import ExitDialog from "./ExitDialog";
 import { SCENES } from "./scenes";
+import { useExitGuard } from "@/hooks/useExitGuard";
+import { formatTime, isDarkColor, playChime, unlockAudio } from "@/lib/timer-utils";
 import { LEVELS, LEVEL_KEYS, getTimer, type Level } from "@/lib/timers";
 
 type Status = "idle" | "running" | "paused" | "done";
@@ -16,72 +18,6 @@ function randomDuration(level: Level) {
 }
 
 const DEFAULT_DURATION = 60 * 60;
-
-function formatTime(ms: number) {
-  const total = Math.floor(ms / 1000);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-}
-
-function isDarkColor(hex: string) {
-  const n = parseInt(hex.slice(1), 16);
-  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.45;
-}
-
-/** Tiếng "ting ting ting" khi hoàn thành, tạo bằng Web Audio nên không cần file âm thanh. */
-function playChime(ctx: AudioContext | null) {
-  if (!ctx) return;
-  const notes = [659.25, 783.99, 1046.5, 783.99, 1046.5];
-  notes.forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const t = ctx.currentTime + i * 0.18;
-    osc.type = "triangle";
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + 0.55);
-  });
-}
-
-function Confetti({ emoji }: { emoji: string }) {
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 40 }).map((_, i) => ({
-        left: Math.random() * 100,
-        delay: Math.random() * 1.5,
-        duration: 2.5 + Math.random() * 2,
-        size: 18 + Math.random() * 18,
-        char: ["🎉", "✨", "⭐", "🎊", emoji][i % 5],
-      })),
-    [emoji],
-  );
-  return (
-    <>
-      {pieces.map((p, i) => (
-        <span
-          key={i}
-          className="confetti"
-          style={{
-            left: `${p.left}vw`,
-            fontSize: p.size,
-            animationDuration: `${p.duration}s`,
-            animationDelay: `${p.delay}s`,
-          }}
-        >
-          {p.char}
-        </span>
-      ))}
-    </>
-  );
-}
 
 export default function TimerRunner({ slug }: { slug: string }) {
   const timer = getTimer(slug)!;
@@ -97,82 +33,10 @@ export default function TimerRunner({ slug }: { slug: string }) {
   const audioRef = useRef<AudioContext | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
-  const router = useRouter();
-  const exitingRef = useRef(false);
-  /** Popup xác nhận thoát đang mở: lưu lại việc cần làm khi chọn ở lại / thoát */
-  const [exitPrompt, setExitPrompt] = useState<{ stay: () => void; leave: () => void } | null>(null);
   // Đang có lượt dở dang thì thoát phải xác nhận; thoát là mất tiến độ (không lưu lại)
   const inProgress = status === "running" || status === "paused";
+  const { exitPrompt, exitTo } = useExitGuard(inProgress);
 
-  // Dọn dữ liệu cũ từ phiên bản trước (từng lưu tiến độ vào localStorage)
-  useEffect(() => {
-    try {
-      localStorage.removeItem(`fun-timer:${slug}`);
-    } catch {
-      // bỏ qua
-    }
-  }, [slug]);
-
-  // Đóng tab / tải lại trang: trình duyệt hiện hộp xác nhận mặc định
-  useEffect(() => {
-    if (!inProgress) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [inProgress]);
-
-  // Nút Back của trình duyệt: chèn một mốc lịch sử để chặn lại và hỏi xác nhận
-  useEffect(() => {
-    if (!inProgress) return;
-    const pushGuard = () => window.history.pushState(window.history.state, "", window.location.href);
-    pushGuard();
-    let guardActive = true;
-    let leaving = false;
-    const onPopState = () => {
-      if (leaving || !guardActive) return;
-      // Mốc chặn vừa bị Back gỡ đi; hỏi người dùng
-      guardActive = false;
-      setExitPrompt({
-        stay: () => {
-          pushGuard();
-          guardActive = true;
-          setExitPrompt(null);
-        },
-        leave: () => {
-          leaving = true;
-          setExitPrompt(null);
-          window.history.back();
-        },
-      });
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => {
-      window.removeEventListener("popstate", onPopState);
-      // Lượt đã xong / đặt lại mà chưa thoát: gỡ mốc lịch sử đã chèn
-      if (guardActive && !leaving && !exitingRef.current) window.history.back();
-    };
-  }, [inProgress]);
-
-  // Lượt kết thúc trong lúc popup đang mở thì đóng popup
-  useEffect(() => {
-    if (!inProgress) setExitPrompt(null);
-  }, [inProgress]);
-
-  const exitTo = (href: string) => {
-    if (!inProgress) return router.push(href);
-    setExitPrompt({
-      stay: () => setExitPrompt(null),
-      leave: () => {
-        // Thay thế mốc lịch sử đã chèn để không để lại trang thừa trong lịch sử
-        exitingRef.current = true;
-        setExitPrompt(null);
-        router.replace(href);
-      },
-    });
-  };
 
   // Đồng hồ chạy
   useEffect(() => {
@@ -211,11 +75,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
   }, [status, elapsedMs, timer.short]);
 
   const start = useCallback(() => {
-    // Tạo AudioContext trong lúc người dùng bấm để trình duyệt cho phép phát âm thanh
-    if (!audioRef.current && typeof window !== "undefined" && "AudioContext" in window) {
-      audioRef.current = new AudioContext();
-    }
-    audioRef.current?.resume();
+    audioRef.current = unlockAudio(audioRef.current);
     let base = remaining;
     if (status !== "paused") {
       // Lượt mới: bốc thăm thời gian tập trung, giấu kín không cho xem
