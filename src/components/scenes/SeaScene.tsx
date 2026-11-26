@@ -1,3 +1,4 @@
+import { Bird } from "./parts";
 import { SceneProps, clamp } from "./utils";
 
 const BANK = 140; // mặt đất bờ biển
@@ -12,7 +13,9 @@ function Person({ x, shirt, pants, wife }: { x: number; shirt: string; pants: st
       <line x1={x + 4} y1={BANK} x2={x + 4} y2={BANK - 16} stroke={pants} strokeWidth="5" strokeLinecap="round" />
       <rect x={x - 9} y={BANK - 40} width="18" height="26" rx="6" fill={shirt} />
       <circle cx={x} cy={BANK - 48} r="9" fill="#fcd9b6" />
-      <circle cx={x + 3} cy={BANK - 49} r="1.4" fill="#1f2937" />
+      <g className="anim-eye">
+        <circle cx={x + 3} cy={BANK - 49} r="1.4" fill="#1f2937" />
+      </g>
       <path d={`M${x} ${BANK - 44} q 3 2 6 0`} stroke="#1f2937" strokeWidth="1.3" fill="none" strokeLinecap="round" />
       {wife ? (
         // nón lá
@@ -65,6 +68,9 @@ export default function SeaScene({ progress, running }: SceneProps) {
         <ellipse cx="166" cy="33" rx="14" ry="9" />
       </g>
 
+      <Bird y={70} delay={0} />
+      <Bird y={88} delay={5} scale={0.75} />
+
       {/* đáy biển (cát) */}
       <path d={`${SEABED} L300 300 L0 300 L0 ${BANK} Z`} fill="#fcd34d" />
       <path d={SEABED} fill="none" stroke="#d97706" strokeWidth="2" opacity="0.5" />
@@ -97,6 +103,17 @@ export default function SeaScene({ progress, running }: SceneProps) {
             stroke="#ecfeff"
             strokeWidth="3"
           />
+          {/* sóng nhỏ chạy ngang dưới mặt nước */}
+          {waterY < 250 && (
+            <path
+              className="anim-wave-slow"
+              d={`M80 ${waterY + 16} ${Array.from({ length: 10 }, () => "q 12 -4 24 0 t 24 0").join(" ")}`}
+              fill="none"
+              stroke="#a5f3fc"
+              strokeWidth="2"
+              opacity="0.5"
+            />
+          )}
           {/* cá bơi */}
           {waterY < 240 && (
             <g transform={`translate(210 ${Math.max(waterY + 22, 200)})`}>

@@ -53,13 +53,37 @@ export default function CandleScene({ progress, running }: SceneProps) {
         <g className={running ? "anim-flicker" : undefined} style={{ transformOrigin: `150px ${top - 10}px` }}>
           <path d={`M150 ${top - 52} C 168 ${top - 30} 164 ${top - 8} 150 ${top - 8} C 136 ${top - 8} 132 ${top - 30} 150 ${top - 52} Z`} fill="#f59e0b" />
           <path d={`M150 ${top - 36} C 159 ${top - 24} 157 ${top - 12} 150 ${top - 12} C 143 ${top - 12} 141 ${top - 24} 150 ${top - 36} Z`} fill="#fef08a" />
+          <ellipse cx="150" cy={top - 16} rx="3" ry="5" fill="#fff" opacity="0.8" />
         </g>
-      ) : (
+      ) : null}
+      {!done && running && (
+        <g fill="#fbbf24">
+          {[
+            [-6, 0, "-10px"],
+            [4, 0.6, "12px"],
+            [0, 1.2, "-4px"],
+          ].map(([dx, d, drift]) => (
+            <circle
+              key={String(d)}
+              className="anim-ember"
+              style={{ animationDelay: `${d}s`, ["--dx" as string]: drift }}
+              cx={150 + Number(dx)}
+              cy={top - 44}
+              r="2"
+            />
+          ))}
+        </g>
+      )}
+      {done && (
         <g fill="none" stroke="#94a3b8" strokeWidth="3" strokeLinecap="round">
           <path className="anim-smoke" d={`M150 ${top - 14} q -10 -12 0 -24 t 0 -24`} />
           <path className="anim-smoke" style={{ animationDelay: "0.8s" }} d={`M150 ${top - 14} q 10 -12 0 -24 t 0 -24`} />
         </g>
       )}
+      {/* sao băng thỉnh thoảng vụt qua */}
+      <g className="anim-bird" style={{ animationDuration: "9s", animationDelay: "3s" }}>
+        <line x1="0" y1="30" x2="-24" y2="22" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+      </g>
     </svg>
   );
 }

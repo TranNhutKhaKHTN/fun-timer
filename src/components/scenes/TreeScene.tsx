@@ -1,3 +1,4 @@
+import { Bird } from "./parts";
 import { SceneProps, clamp } from "./utils";
 
 const FRUITS = [
@@ -37,6 +38,13 @@ export default function TreeScene({ progress, running }: SceneProps) {
       </g>
       <circle cx="250" cy="50" r="20" fill="#fde047" />
 
+      <g className="anim-cloud" fill="white" opacity="0.9">
+        <ellipse cx="60" cy="60" rx="24" ry="9" />
+        <ellipse cx="76" cy="53" rx="14" ry="9" />
+      </g>
+      <Bird y={95} delay={1} />
+      <Bird y={75} delay={7} scale={0.8} />
+
       <ellipse cx="150" cy={ground + 30} rx="170" ry="40" fill="#86efac" />
       <ellipse cx="150" cy={ground + 2} rx="40" ry="8" fill="#a16207" />
 
@@ -61,6 +69,24 @@ export default function TreeScene({ progress, running }: SceneProps) {
             <circle cx={150 - r * 0.3} cy={top - r * 0.45} r={r * 0.25} fill="#4ade80" opacity="0.7" />
           </g>
         )}
+
+        {running && p >= 0.2 &&
+          [
+            [-0.5, 0],
+            [0.4, 0.2],
+            [-0.1, 0.35],
+          ].map(([dx, dy], i) => (
+            <ellipse
+              key={i}
+              className="anim-leaf"
+              style={{ animationDelay: `${i * 1.5}s` }}
+              cx={150 + dx * r}
+              cy={top + dy * r}
+              rx="5"
+              ry="3"
+              fill="#4ade80"
+            />
+          ))}
 
         {FRUITS.slice(0, fruitCount).map(([fx, fy], i) => (
           <g key={i} className="anim-pop">

@@ -1,3 +1,4 @@
+import { Bird } from "./parts";
 import { SceneProps, clamp } from "./utils";
 
 const GROUND = 240;
@@ -52,6 +53,10 @@ export default function MountainScene({ progress, running }: SceneProps) {
         <ellipse cx="78" cy="38" rx="16" ry="10" />
       </g>
 
+      <Bird y={70} />
+      <Bird y={92} delay={2.5} scale={0.7} />
+      <Bird y={58} delay={8} scale={0.85} />
+
       {/* núi cũ (bên trái) */}
       {h1 > 1 && (
         <g>
@@ -78,6 +83,14 @@ export default function MountainScene({ progress, running }: SceneProps) {
         </g>
       )}
 
+      {running && p < 1 && (
+        <g fill="#d6d3d1">
+          {[0, 0.3, 0.6].map((d, i) => (
+            <circle key={d} className="anim-steam" style={{ animationDelay: `${d}s` }} cx={118 + i * 6} cy="234" r="5" opacity="0.8" />
+          ))}
+        </g>
+      )}
+
       {/* Ngu Công */}
       <g transform="translate(160 0)">
         <g className={running ? "anim-dig" : undefined}>
@@ -91,8 +104,10 @@ export default function MountainScene({ progress, running }: SceneProps) {
           <circle cx="0" cy="175" r="13" fill="#fcd9b6" />
           {/* râu bạc */}
           <path d="M-9 180 Q0 206 9 180 Q0 186 -9 180 Z" fill="white" />
-          <circle cx="-5" cy="172" r="1.6" fill="#1f2937" />
-          <circle cx="5" cy="172" r="1.6" fill="#1f2937" />
+          <g className="anim-eye">
+            <circle cx="-5" cy="172" r="1.6" fill="#1f2937" />
+            <circle cx="5" cy="172" r="1.6" fill="#1f2937" />
+          </g>
           {/* nón lá */}
           <path d="M-24 166 L0 146 L24 166 Z" fill="#fbbf24" stroke="#b45309" strokeWidth="1.5" />
           {/* tay */}

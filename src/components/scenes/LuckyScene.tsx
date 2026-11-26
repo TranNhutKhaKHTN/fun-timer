@@ -66,8 +66,8 @@ export default function LuckyScene({ progress, running, value, target, won, spin
           fill={i % 2 ? "#fde047" : "#f9fafb"}
           stroke="#1c1917"
           strokeWidth="1.5"
-          className={lit ? "anim-twinkle" : undefined}
-          style={{ animationDelay: `${(i % 2) * 0.4}s`, animationDuration: "0.8s" }}
+          className={lit ? "anim-chase" : undefined}
+          style={{ animationDelay: `${(i % 2) * 0.45}s` }}
         />
       ))}
 

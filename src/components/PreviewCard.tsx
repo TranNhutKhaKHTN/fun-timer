@@ -9,7 +9,7 @@ const IDLE_PROGRESS = 0.35;
 const DEMO_MS = 5000;
 
 /** Thẻ giới thiệu một bộ đếm. Di chuột vào sẽ chạy thử toàn bộ hiệu ứng trong 5 giây. */
-export default function PreviewCard({ timer }: { timer: TimerTheme }) {
+export default function PreviewCard({ timer, index = 0 }: { timer: TimerTheme; index?: number }) {
   const Scene = SCENES[timer.slug];
   const [progress, setProgress] = useState(IDLE_PROGRESS);
   const [hover, setHover] = useState(false);
@@ -34,7 +34,8 @@ export default function PreviewCard({ timer }: { timer: TimerTheme }) {
       href={`/timer/${timer.slug}`}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="group flex flex-col overflow-hidden rounded-3xl border-4 border-stone-900 bg-white shadow-[6px_6px_0_0_#1c1917] transition hover:-translate-y-1 hover:shadow-[10px_10px_0_0_#1c1917]"
+      style={{ animationDelay: `${index * 70}ms` }}
+      className="anim-card-in group flex flex-col overflow-hidden rounded-3xl border-4 border-stone-900 bg-white shadow-[6px_6px_0_0_#1c1917] transition hover:-translate-y-1 hover:shadow-[10px_10px_0_0_#1c1917]"
     >
       <div className="relative aspect-square w-full" style={{ background: timer.bg }}>
         <span
@@ -44,7 +45,9 @@ export default function PreviewCard({ timer }: { timer: TimerTheme }) {
         >
           {LEVELS[timer.level].emoji} {LEVELS[timer.level].label}
         </span>
-        <Scene progress={Math.min(1, progress)} running={hover} />
+        <div className="h-full w-full transition-transform duration-500 group-hover:scale-105">
+          <Scene progress={Math.min(1, progress)} running={hover} />
+        </div>
       </div>
       <div className="flex flex-1 flex-col gap-1 border-t-4 border-stone-900 p-4">
         <h2 className="text-lg font-extrabold leading-tight">

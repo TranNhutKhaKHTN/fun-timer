@@ -31,6 +31,15 @@ export default function IceScene({ progress, running }: SceneProps) {
           stroke="#e0f2fe"
           strokeWidth="3"
         />
+        {running && size > 6 && (
+          <g fill="none" stroke="white" strokeWidth="2">
+            <ellipse className="anim-ripple" cx="150" cy={waterY} rx={size * 0.6 + 12} ry="4" />
+            <ellipse className="anim-ripple" style={{ animationDelay: "1.1s" }} cx="150" cy={waterY} rx={size * 0.6 + 12} ry="4" />
+          </g>
+        )}
+        {[118, 160, 182].map((x, i) => (
+          <circle key={x} className="anim-rise" style={{ animationDelay: `${i * 0.8}s` }} cx={x} cy="250" r="2.5" fill="white" opacity="0.7" />
+        ))}
       </g>
 
       {/* viên đá */}
@@ -58,8 +67,10 @@ export default function IceScene({ progress, running }: SceneProps) {
             />
             {size > 28 && (
               <g>
-                <circle cx={-size * 0.18} cy={-size * 0.02} r={size * 0.05} fill="#0c4a6e" />
-                <circle cx={size * 0.18} cy={-size * 0.02} r={size * 0.05} fill="#0c4a6e" />
+                <g className="anim-eye">
+                  <circle cx={-size * 0.18} cy={-size * 0.02} r={size * 0.05} fill="#0c4a6e" />
+                  <circle cx={size * 0.18} cy={-size * 0.02} r={size * 0.05} fill="#0c4a6e" />
+                </g>
                 <path
                   d={
                     p < 0.5
@@ -91,6 +102,13 @@ export default function IceScene({ progress, running }: SceneProps) {
       <path d="M78 82 L97 258 L203 258 L222 82" fill="none" stroke="#94a3b8" strokeWidth="4" strokeLinejoin="round" />
       <ellipse cx="150" cy="82" rx="72" ry="6" fill="none" stroke="#94a3b8" strokeWidth="3" />
       <path d="M92 100 L106 230" stroke="white" strokeWidth="6" strokeLinecap="round" opacity="0.7" />
+      {[
+        [212, 110, 0],
+        [86, 130, 1.7],
+        [206, 160, 3.2],
+      ].map(([x, y, d]) => (
+        <ellipse key={x + y} className="anim-slide-down" style={{ animationDelay: `${d}s` }} cx={x} cy={y} rx="2.5" ry="3.5" fill="#bae6fd" />
+      ))}
     </svg>
   );
 }

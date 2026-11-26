@@ -2,28 +2,39 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Confetti from "./Confetti";
+import Celebration from "./Celebration";
 import ExitDialog from "./ExitDialog";
 import LuckyScene from "./scenes/LuckyScene";
 import { useExitGuard } from "@/hooks/useExitGuard";
-import { formatTime, playChime, unlockAudio } from "@/lib/timer-utils";
+import { testBadgeText, useTestSeconds } from "@/hooks/useTestMode";
+import { formatTime, playFanfare, playFirework, unlockAudio } from "@/lib/timer-utils";
 import { LEVELS, getTimer } from "@/lib/timers";
 
 type Status = "idle" | "running" | "paused" | "done";
 
-/** Mỗi lần quay cách nhau 5 giây */
-const ROLL_MS = 5000;
+/** Mỗi lần quay cách nhau 3 giây */
+const ROLL_MS = 3000;
 /** Thời gian hiệu ứng ô số nhảy loạn trước khi dừng ở kết quả */
 const SPIN_MS = 800;
-/** Khoảng số được phép chọn và được quay: từ 1.000 đến dưới 10 tỷ (chế độ Địa ngục) */
-const MIN = 1_000;
+/**
+ * Số được phép chọn: từ 10.000 đến dưới 10 tỷ (chế độ Địa ngục).
+ * Máy quay từ 10.000 đến số lớn nhất có cùng số chữ số với số đã chọn,
+ * VD chọn 123456 (6 chữ số) thì máy quay từ 10.000 đến 999.999 và hiện 6 ô.
+ */
+const MIN = 10_000;
 const MAX = 9_999_999_999;
-const DIGITS = String(MAX).length;
+const MIN_DIGITS = String(MIN).length;
+const MAX_DIGITS = String(MAX).length;
 const HISTORY_SIZE = 12;
-/** Lệch trong khoảng này thì báo "suýt nữa" */
-const NEAR_MISS = 10_000_000;
-
-const randInt = () => MIN + Math.floor(Math.random() * (MAX - MIN + 1));
+const digitsOf = (n: number) => String(n).length;
+/** Số lớn nhất có cùng số chữ số, VD 123456 → 999999 */
+const maxFor = (n: number) => 10 ** digitsOf(n) - 1;
+const randBetween = (lo: number, hi: number) => lo + Math.floor(Math.random() * (hi - lo + 1));
+/** "Chọn giùm": bốc số chữ số trước để số ngắn và số dài đều có cơ hội */
+const randomPick = () => {
+  const d = randBetween(MIN_DIGITS, MAX_DIGITS);
+  return randBetween(Math.max(MIN, 10 ** (d - 1)), 10 ** d - 1);
+};
 const fmt = (n: number) => n.toLocaleString("vi-VN");
 /** Đọc số người dùng nhập, chấp nhận cả dấu chấm/phẩy/khoảng trắng phân cách hàng nghìn */
 const parseNumber = (v: string) => (/^[\d.,\s]+$/.test(v.trim()) ? Number(v.replace(/[.,\s]/g, "")) : NaN);
@@ -51,10 +62,21 @@ export default function LuckyRunner({ slug }: { slug: string }) {
 
   const audioRef = useRef<AudioContext | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const testSeconds = useTestSeconds();
   const spinTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const inProgress = status === "running" || status === "paused";
   const { exitPrompt, exitTo } = useExitGuard(inProgress);
+
+  const typed = parseNumber(input);
+  const typedValid = Number.isInteger(typed) && typed >= MIN && typed <= MAX;
+  const shownNumber = target ?? (typedValid ? typed : null);
+  // Số ô trên máy = số chữ số của số đã chọn (đang gõ thì co giãn theo, tối thiểu 5, tối đa 10)
+  const typedDigits = input.replace(/\D/g, "").length;
+  const digitCount = shownNumber != null ? digitsOf(shownNumber) : Math.min(MAX_DIGITS, Math.max(MIN_DIGITS, typedDigits));
+  const rollMax = 10 ** digitCount - 1;
+  /** Lệch trong khoảng này thì báo "suýt nữa" (khoảng 0,01% của dải số) */
+  const nearMissRange = Math.max(10, Math.round(rollMax / 10_000));
 
   const elapsedMs = elapsedBase + (status === "running" && startedAt ? Math.max(0, now - startedAt) : 0);
   const nextRollPct = status === "idle" ? 0 : (elapsedMs % ROLL_MS) / ROLL_MS;
@@ -70,9 +92,9 @@ export default function LuckyRunner({ slug }: { slug: string }) {
   // Ô số nhảy loạn trong lúc quay
   useEffect(() => {
     if (!spinning) return;
-    const id = setInterval(() => setFlicker(randInt()), 60);
+    const id = setInterval(() => setFlicker(randBetween(MIN, rollMax)), 60);
     return () => clearInterval(id);
-  }, [spinning]);
+  }, [spinning, rollMax]);
 
   useEffect(() => () => clearTimeout(spinTimeout.current), []);
 
@@ -82,10 +104,13 @@ export default function LuckyRunner({ slug }: { slug: string }) {
     const due = Math.floor(elapsedMs / ROLL_MS);
     if (due <= rolls) return;
 
+    const hi = maxFor(target);
     const results: number[] = [];
     let hit = false;
     for (let i = rolls; i < due && !hit; i++) {
-      const r = randInt();
+      // Chế độ test: lượt quay đầu tiên sau mốc ?test= giây chắc chắn trúng
+      const forceHit = testSeconds != null && (i + 1) * ROLL_MS >= testSeconds * 1000;
+      const r: number = forceHit ? target : randBetween(MIN, hi);
       results.push(r);
       if (r === target) hit = true;
     }
@@ -113,10 +138,10 @@ export default function LuckyRunner({ slug }: { slug: string }) {
       setDisplay(last);
       if (hit) {
         setCelebrate(true);
-        playChime(audioRef.current);
+        playFanfare(audioRef.current);
       }
     }, SPIN_MS);
-  }, [elapsedMs, status, target, rolls]);
+  }, [elapsedMs, status, target, rolls, testSeconds]);
 
   // Tiêu đề tab
   useEffect(() => {
@@ -199,9 +224,7 @@ export default function LuckyRunner({ slug }: { slug: string }) {
 
   const running = status === "running";
   const won = status === "done";
-  const nearMiss = !spinning && display != null && target != null && !won && Math.abs(display - target) <= NEAR_MISS;
-  const typed = parseNumber(input);
-  const typedValid = Number.isInteger(typed) && typed >= MIN && typed <= MAX;
+  const nearMiss = !spinning && display != null && target != null && !won && Math.abs(display - target) <= nearMissRange;
 
   const message = celebrate
     ? `Quay ${rolls} lần mới trúng! ${timer.doneMessage}`
@@ -215,7 +238,9 @@ export default function LuckyRunner({ slug }: { slug: string }) {
 
   return (
     <div className="min-h-screen" style={{ background: timer.bg }}>
-      {celebrate && <Confetti emoji={timer.emoji} />}
+      {celebrate && (
+        <Celebration emoji={timer.emoji} title={timer.doneTitle} onBurst={() => playFirework(audioRef.current)} />
+      )}
       {exitPrompt && (
         <ExitDialog
           emoji={timer.emoji}
@@ -238,6 +263,11 @@ export default function LuckyRunner({ slug }: { slug: string }) {
         >
           ← Tất cả bộ đếm
         </Link>
+        {testSeconds != null && (
+          <p className="mt-2 inline-block rounded-full border-2 border-dashed border-stone-900 bg-lime-200 px-3 py-0.5 text-sm font-bold text-stone-900">
+            {testBadgeText(testSeconds)}
+          </p>
+        )}
         <h1 className="mt-2 text-3xl font-extrabold leading-tight sm:text-5xl">
           {timer.emoji} {celebrate ? timer.doneTitle : timer.title}
         </h1>
@@ -254,8 +284,8 @@ export default function LuckyRunner({ slug }: { slug: string }) {
                 progress={0}
                 running={running}
                 value={spinning ? flicker : display}
-                target={target ?? (typedValid ? typed : null)}
-                digits={DIGITS}
+                target={shownNumber}
+                digits={digitCount}
                 won={celebrate}
                 spinning={spinning}
               />
@@ -266,7 +296,10 @@ export default function LuckyRunner({ slug }: { slug: string }) {
           {/* Bảng điều khiển */}
           <div className="flex flex-col gap-6">
             <div>
-              <p className="mb-1 text-sm font-bold uppercase tracking-wide text-stone-600">Đã tập trung</p>
+              <p className="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-stone-600">
+                {running && <span className="anim-live inline-block h-2.5 w-2.5 rounded-full bg-red-500" />}
+                Đã tập trung
+              </p>
               <div className="text-7xl font-extrabold tabular-nums leading-none sm:text-8xl">{formatTime(elapsedMs)}</div>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
@@ -294,19 +327,19 @@ export default function LuckyRunner({ slug }: { slug: string }) {
                 <div className="mt-3">
                   <p className="mb-1 text-xs font-bold uppercase text-stone-500">Lượt quay tiếp theo</p>
                   <div className="h-3 w-full overflow-hidden rounded-full border-2 border-stone-900 bg-white">
-                    <div className="h-full" style={{ width: `${nextRollPct * 100}%`, background: timer.accent }} />
+                    <div className={`h-full ${running ? "progress-stripes" : ""}`} style={{ width: `${nextRollPct * 100}%`, background: timer.accent }} />
                   </div>
                 </div>
               )}
 
-              <p className="mt-3 min-h-12 text-lg font-semibold text-stone-800">💬 {message}</p>
+              <p key={message} className="anim-msg-in mt-3 min-h-12 text-lg font-semibold text-stone-800">💬 {message}</p>
 
               {history.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {history.map((n, i) => (
                     <span
                       key={`${rolls}-${i}`}
-                      className={`rounded-lg border-2 border-stone-900 px-2 py-0.5 text-sm font-bold tabular-nums ${
+                      className={`${i === 0 ? "anim-pop" : ""} inline-block rounded-lg border-2 border-stone-900 px-2 py-0.5 text-sm font-bold tabular-nums ${
                         n === target ? "bg-green-300" : i === 0 ? "bg-yellow-200" : "bg-white text-stone-500"
                       }`}
                     >
@@ -346,7 +379,7 @@ export default function LuckyRunner({ slug }: { slug: string }) {
                   type="button"
                   disabled={status !== "idle"}
                   onClick={() => {
-                    setInput(fmt(randInt()));
+                    setInput(fmt(randomPick()));
                     setInputError("");
                   }}
                   className="rounded-xl border-2 border-stone-900 bg-white px-3 py-2 font-bold disabled:opacity-50"
@@ -385,12 +418,12 @@ export default function LuckyRunner({ slug }: { slug: string }) {
               <span className="text-3xl">{level.emoji}</span>
               <div>
                 <p className="font-extrabold">Chế độ {level.label}</p>
-                <p className="text-sm text-white/80">Gần 10 tỷ con số, trúng được là chuyện thần kỳ!</p>
+                <p className="text-sm text-white/80">Số càng nhiều chữ số càng khó trúng, trúng được là chuyện thần kỳ!</p>
               </div>
             </div>
 
             <p className="text-sm text-stone-600">
-              Cứ mỗi 5 giây máy quay một lần, ra đúng số của bạn thì xong. Bấm{" "}
+              Cứ mỗi 3 giây máy quay một lần, ra đúng số của bạn thì xong. Số có bao nhiêu chữ số thì máy có bấy nhiêu ô, quay từ {fmt(MIN)} đến {fmt(rollMax)}. Bấm{" "}
               <kbd className="rounded border border-current px-1">Space</kbd> để bắt đầu / tạm dừng. Thoát giữa chừng là mất hết lượt quay.
             </p>
           </div>

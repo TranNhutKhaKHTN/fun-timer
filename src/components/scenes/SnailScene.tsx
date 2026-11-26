@@ -1,5 +1,19 @@
 import { SceneProps, clamp } from "./utils";
 
+function Butterfly({ x, y, color, delay }: { x: number; y: number; color: string; delay: number }) {
+  return (
+    <g className="anim-butterfly" style={{ animationDelay: `${delay}s` }}>
+      <g transform={`translate(${x} ${y})`}>
+        <g className="anim-flap" style={{ animationDuration: "0.25s" }}>
+          <ellipse cx="-5" cy="0" rx="5" ry="7" fill={color} />
+          <ellipse cx="5" cy="0" rx="5" ry="7" fill={color} />
+        </g>
+        <rect x="-1" y="-6" width="2" height="12" rx="1" fill="#1f2937" />
+      </g>
+    </g>
+  );
+}
+
 export default function SnailScene({ progress, running }: SceneProps) {
   const p = clamp(progress);
   const startX = 40;
@@ -14,6 +28,17 @@ export default function SnailScene({ progress, running }: SceneProps) {
       <rect y={ground} width="300" height={300 - ground} fill="#4ade80" />
       {[20, 70, 120, 170, 220, 270].map((gx) => (
         <path key={gx} d={`M${gx} ${ground + 30} l4 -10 l4 10`} stroke="#16a34a" strokeWidth="2" fill="none" />
+      ))}
+
+      <Butterfly x={60} y={120} color="#f472b6" delay={0} />
+      <Butterfly x={150} y={90} color="#fb923c" delay={3} />
+      {/* hoa */}
+      {[95, 140, 225].map((fx, i) => (
+        <g key={fx} className="anim-sway" style={{ transformOrigin: `${fx}px ${ground}px`, animationDelay: `${i * 0.7}s` }}>
+          <line x1={fx} y1={ground} x2={fx} y2={ground - 18} stroke="#16a34a" strokeWidth="2" />
+          <circle cx={fx} cy={ground - 20} r="5" fill={["#f472b6", "#facc15", "#a78bfa"][i]} />
+          <circle cx={fx} cy={ground - 20} r="2" fill="#fff7ed" />
+        </g>
       ))}
 
       {/* vạch xuất phát */}
@@ -46,8 +71,10 @@ export default function SnailScene({ progress, running }: SceneProps) {
           <line x1="37" y1="-28" x2="42" y2="-45" stroke="#fcd34d" strokeWidth="3" strokeLinecap="round" />
           <circle cx="28" cy="-47" r="4" fill="white" stroke="#fcd34d" strokeWidth="2" />
           <circle cx="42" cy="-46" r="4" fill="white" stroke="#fcd34d" strokeWidth="2" />
-          <circle cx="29" cy="-47" r="2" fill="#1f2937" />
-          <circle cx="43" cy="-46" r="2" fill="#1f2937" />
+          <g className="anim-eye">
+            <circle cx="29" cy="-47" r="2" fill="#1f2937" />
+            <circle cx="43" cy="-46" r="2" fill="#1f2937" />
+          </g>
           <path d="M33 -20 q 3 3 6 0" stroke="#92400e" strokeWidth="2" fill="none" strokeLinecap="round" />
           {/* vỏ */}
           <circle cx="0" cy="-34" r="26" fill="#a855f7" />

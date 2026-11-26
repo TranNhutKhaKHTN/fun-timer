@@ -60,9 +60,10 @@ export default function TimerGallery() {
         })}
       </nav>
 
-      <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {shown.map((t) => (
-          <PreviewCard key={t.slug} timer={t} />
+      {/* key theo bộ lọc để các thẻ chạy lại hiệu ứng xuất hiện mỗi lần đổi lọc */}
+      <section key={filter} className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {shown.map((t, i) => (
+          <PreviewCard key={t.slug} timer={t} index={i} />
         ))}
       </section>
     </>

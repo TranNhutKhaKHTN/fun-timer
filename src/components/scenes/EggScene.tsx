@@ -1,3 +1,4 @@
+import { Sparkle } from "./parts";
 import { SceneProps, clamp } from "./utils";
 
 const EGG = "M150 92 C 192 92 208 160 206 190 C 204 226 180 244 150 244 C 120 244 96 226 94 190 C 92 160 108 92 150 92 Z";
@@ -48,22 +49,37 @@ export default function EggScene({ progress, running }: SceneProps) {
             ))}
           </g>
           <Nest />
+          {running && (
+            <g>
+              <Sparkle x={80} y={110} delay={0} />
+              <Sparkle x={222} y={130} delay={0.6} size={6} />
+              <Sparkle x={210} y={70} delay={1.1} size={5} />
+              <Sparkle x={90} y={190} delay={0.3} size={5} />
+            </g>
+          )}
         </>
       ) : (
         <>
           {/* gà con */}
+          <g className="anim-hop">
           <g className="anim-pop">
             <circle cx="150" cy="170" r="52" fill="#fde047" />
-            <circle cx="132" cy="162" r="6" fill="#1f2937" />
-            <circle cx="168" cy="162" r="6" fill="#1f2937" />
-            <circle cx="134" cy="160" r="2" fill="white" />
-            <circle cx="170" cy="160" r="2" fill="white" />
+            <g className="anim-eye">
+              <circle cx="132" cy="162" r="6" fill="#1f2937" />
+              <circle cx="168" cy="162" r="6" fill="#1f2937" />
+              <circle cx="134" cy="160" r="2" fill="white" />
+              <circle cx="170" cy="160" r="2" fill="white" />
+            </g>
             <path d="M142 176 L158 176 L150 188 Z" fill="#f97316" />
             <ellipse cx="120" cy="180" rx="8" ry="5" fill="#fb923c" opacity="0.5" />
             <ellipse cx="180" cy="180" rx="8" ry="5" fill="#fb923c" opacity="0.5" />
             {/* vỏ trên đầu */}
             <path d="M118 128 L126 116 L134 126 L142 112 L150 124 L158 110 L166 124 L174 114 L182 128 Q150 90 118 128 Z" fill="#fffbeb" stroke="#e7e5e4" strokeWidth="2" />
           </g>
+          </g>
+          <Sparkle x={70} y={120} delay={0} />
+          <Sparkle x={232} y={150} delay={0.5} size={7} />
+          <Sparkle x={100} y={70} delay={1} size={6} />
           {/* nửa vỏ dưới */}
           <path
             d="M96 196 L108 186 L118 198 L130 184 L142 198 L154 184 L166 198 L178 184 L190 198 L204 188 C 204 228 180 244 150 244 C 120 244 96 228 96 196 Z"

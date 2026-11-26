@@ -37,8 +37,10 @@ export default function BatteryScene({ progress, running }: SceneProps) {
           <g>
             {level > 0.3 ? (
               <>
-                <circle cx="116" cy="138" r="6" fill="#0f172a" />
-                <circle cx="174" cy="138" r="6" fill="#0f172a" />
+                <g className="anim-eye">
+                  <circle cx="116" cy="138" r="6" fill="#0f172a" />
+                  <circle cx="174" cy="138" r="6" fill="#0f172a" />
+                </g>
               </>
             ) : (
               <g stroke="#0f172a" strokeWidth="4" strokeLinecap="round">
@@ -57,6 +59,20 @@ export default function BatteryScene({ progress, running }: SceneProps) {
           </g>
         )}
       </g>
+
+      {/* tia điện nhỏ toả ra khi pin đang tụt */}
+      {running && !dead && (
+        <g stroke={color} strokeWidth="3" strokeLinecap="round">
+          {[
+            [40, 100, "M0 0 l-8 -6"],
+            [40, 200, "M0 0 l-8 6"],
+            [262, 110, "M0 0 l8 -6"],
+          ].map(([x, y, d], i) => (
+            <path key={i} className="anim-sparkle" style={{ animationDelay: `${i * 0.5}s` }} d={`M${x} ${y} ${String(d).slice(4)}`} />
+          ))}
+        </g>
+      )}
+      {dead && <text x="232" y="96" fontSize="16" fontWeight="800" fill="#64748b" className="anim-rise">z z</text>}
 
       <text x="150" y="250" textAnchor="middle" fontSize="34" fontWeight="800" fill={dead ? "#ef4444" : "#0f172a"}>
         {percent}%

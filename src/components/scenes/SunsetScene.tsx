@@ -1,3 +1,4 @@
+import { Bird } from "./parts";
 import { SceneProps, clamp, mixColors } from "./utils";
 
 const STARS = [
@@ -39,8 +40,28 @@ export default function SunsetScene({ progress, running }: SceneProps) {
         <circle cx="150" cy={sunY} r="52" fill={sunColor} opacity="0.25" />
       </g>
 
+      {/* hải âu, tối dần theo trời */}
+      {p < 0.85 && (
+        <g opacity={1 - p}>
+          <Bird y={110} delay={0} color="#1f2937" />
+          <Bird y={130} delay={1.2} color="#1f2937" scale={0.7} />
+        </g>
+      )}
+
       {/* biển */}
       <rect y={horizon} width="300" height={300 - horizon} fill={sea} />
+      {/* sóng chạy ngang */}
+      {[0, 1].map((i) => (
+        <path
+          key={i}
+          className={i ? "anim-wave-slow" : "anim-wave"}
+          d={`M-48 ${horizon + 40 + i * 30} ${Array.from({ length: 9 }, () => "q 12 -5 24 0 t 24 0").join(" ")}`}
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          opacity={0.35 - i * 0.1}
+        />
+      ))}
       {sunY < horizon + 38 &&
         [0, 1, 2, 3].map((i) => (
           <rect

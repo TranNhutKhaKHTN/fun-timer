@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Confetti from "./Confetti";
+import Celebration from "./Celebration";
 import ExitDialog from "./ExitDialog";
 import { SCENES } from "./scenes";
 import { useExitGuard } from "@/hooks/useExitGuard";
-import { formatTime, isDarkColor, playChime, unlockAudio } from "@/lib/timer-utils";
+import { testBadgeText, useTestSeconds } from "@/hooks/useTestMode";
+import { formatTime, isDarkColor, playFanfare, playFirework, unlockAudio } from "@/lib/timer-utils";
 import { LEVELS, LEVEL_KEYS, getTimer, type Level } from "@/lib/timers";
 
 type Status = "idle" | "running" | "paused" | "done";
@@ -32,6 +33,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
   const [now, setNow] = useState(0);
   const audioRef = useRef<AudioContext | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const testSeconds = useTestSeconds();
 
   // Đang có lượt dở dang thì thoát phải xác nhận; thoát là mất tiến độ (không lưu lại)
   const inProgress = status === "running" || status === "paused";
@@ -57,7 +59,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
       setStatus("done");
       setRemaining(0);
       setEndAt(null);
-      playChime(audioRef.current);
+      playFanfare(audioRef.current);
     }
   }, [status, endAt, now]);
 
@@ -79,7 +81,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
     let base = remaining;
     if (status !== "paused") {
       // Lượt mới: bốc thăm thời gian tập trung, giấu kín không cho xem
-      const sec = randomDuration(level);
+      const sec = testSeconds ?? randomDuration(level);
       setDuration(sec);
       base = sec * 1000;
     }
@@ -87,7 +89,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
     setNow(t);
     setEndAt(t + base);
     setStatus("running");
-  }, [status, remaining, level]);
+  }, [status, remaining, level, testSeconds]);
 
   const pause = useCallback(() => {
     if (!endAt) return;
@@ -138,7 +140,9 @@ export default function TimerRunner({ slug }: { slug: string }) {
 
   return (
     <div className="min-h-screen" style={{ background: timer.bg, color: dark ? "#fff" : "#1c1917" }}>
-      {status === "done" && <Confetti emoji={timer.emoji} />}
+      {status === "done" && (
+        <Celebration emoji={timer.emoji} title={timer.doneTitle} onBurst={() => playFirework(audioRef.current)} />
+      )}
       {exitPrompt && (
         <ExitDialog
           emoji={timer.emoji}
@@ -161,6 +165,11 @@ export default function TimerRunner({ slug }: { slug: string }) {
         >
           ← Tất cả bộ đếm
         </Link>
+        {testSeconds != null && (
+          <p className="mt-2 inline-block rounded-full border-2 border-dashed border-stone-900 bg-lime-200 px-3 py-0.5 text-sm font-bold text-stone-900">
+            {testBadgeText(testSeconds)}
+          </p>
+        )}
         <h1 className="mt-2 text-3xl font-extrabold leading-tight sm:text-5xl">
           {timer.emoji} {status === "done" ? timer.doneTitle : timer.title}
         </h1>
@@ -183,15 +192,18 @@ export default function TimerRunner({ slug }: { slug: string }) {
           {/* Bảng điều khiển */}
           <div className="flex flex-col gap-6">
             <div>
-              <p className={`mb-1 text-sm font-bold uppercase tracking-wide ${textMuted}`}>Đã tập trung</p>
+              <p className={`mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-wide ${textMuted}`}>
+                {running && <span className="anim-live inline-block h-2.5 w-2.5 rounded-full bg-red-500" />}
+                Đã tập trung
+              </p>
               <div className="text-7xl font-extrabold tabular-nums leading-none sm:text-8xl">{formatTime(elapsedMs)}</div>
               <div className="mt-4 h-4 w-full overflow-hidden rounded-full border-2 border-stone-900 bg-white">
                 <div
-                  className="h-full transition-[width] duration-300"
+                  className={`h-full transition-[width] duration-300 ${running ? "progress-stripes" : ""}`}
                   style={{ width: `${progress * 100}%`, background: timer.accent }}
                 />
               </div>
-              <p className={`mt-3 min-h-12 text-lg font-semibold ${dark ? "text-white" : "text-stone-800"}`}>
+              <p key={milestone} className={`anim-msg-in mt-3 min-h-12 text-lg font-semibold ${dark ? "text-white" : "text-stone-800"}`}>
                 💬 {milestone}
               </p>
             </div>

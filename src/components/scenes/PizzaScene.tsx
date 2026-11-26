@@ -54,6 +54,22 @@ export default function PizzaScene({ progress, running }: SceneProps) {
         );
       })}
 
+      {/* hơi nóng bốc lên */}
+      {eaten < SLICES &&
+        [120, 150, 180].map((x, i) => (
+          <path
+            key={x}
+            className="anim-steam"
+            style={{ animationDelay: `${i * 0.9}s` }}
+            d={`M${x} ${CY - 30} q -8 -10 0 -20 t 0 -20`}
+            fill="none"
+            stroke="white"
+            strokeWidth="4"
+            strokeLinecap="round"
+            opacity="0.8"
+          />
+        ))}
+
       {/* vụn bánh khi hết */}
       {eaten >= SLICES && (
         <g fill="#f59e0b">

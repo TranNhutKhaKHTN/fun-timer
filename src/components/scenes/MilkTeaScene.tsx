@@ -30,6 +30,11 @@ export default function MilkTeaScene({ progress, running }: SceneProps) {
         {PEARLS.slice(0, pearlCount).map(([x, y], i) => (
           <circle key={i} cx={x} cy={y} r="7" fill="#3f2a1d" />
         ))}
+        {/* bọt khí li ti trong trà */}
+        {level < 225 &&
+          [122, 150, 178].map((x, i) => (
+            <circle key={x} className="anim-rise" style={{ animationDelay: `${i * 0.7}s` }} cx={x} cy={Math.min(262, level + 70)} r="2" fill="#fef3c7" />
+          ))}
         {/* trân châu đang được hút lên */}
         {running && p < 1 && (
           <circle className="anim-sip" cx="170" cy="240" r="6" fill="#3f2a1d" />
@@ -44,8 +49,10 @@ export default function MilkTeaScene({ progress, running }: SceneProps) {
 
       {/* mặt cute */}
       <g>
-        <circle cx="132" cy="150" r="4" fill="#1f2937" />
-        <circle cx="168" cy="150" r="4" fill="#1f2937" />
+        <g className="anim-eye">
+          <circle cx="132" cy="150" r="4" fill="#1f2937" />
+          <circle cx="168" cy="150" r="4" fill="#1f2937" />
+        </g>
         <path
           d={p < 0.7 ? "M142 160 q 8 8 16 0" : "M142 166 q 8 -6 16 0"}
           stroke="#1f2937"
