@@ -6,6 +6,7 @@ import Celebration from "./Celebration";
 import ExitDialog from "./ExitDialog";
 import { SCENES } from "./scenes";
 import { useExitGuard } from "@/hooks/useExitGuard";
+import { trackEvent } from "@/lib/analytics";
 import { testBadgeText, useTestSeconds } from "@/hooks/useTestMode";
 import { formatTime, isDarkColor, playFanfare, playFirework, unlockAudio } from "@/lib/timer-utils";
 import { LEVELS, LEVEL_KEYS, getTimer, type Level } from "@/lib/timers";
@@ -60,8 +61,9 @@ export default function TimerRunner({ slug }: { slug: string }) {
       setRemaining(0);
       setEndAt(null);
       playFanfare(audioRef.current);
+      trackEvent("timer_complete", { timer: slug, level, minutes: Math.round(duration / 60) });
     }
-  }, [status, endAt, now]);
+  }, [status, endAt, now, slug, level, duration]);
 
   // Tiêu đề tab hiển thị thời gian còn lại
   useEffect(() => {
@@ -82,6 +84,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
     if (status !== "paused") {
       // Lượt mới: bốc thăm thời gian tập trung, giấu kín không cho xem
       const sec = testSeconds ?? randomDuration(level);
+      trackEvent("timer_start", { timer: slug, level, test: testSeconds != null });
       setDuration(sec);
       base = sec * 1000;
     }
@@ -89,7 +92,7 @@ export default function TimerRunner({ slug }: { slug: string }) {
     setNow(t);
     setEndAt(t + base);
     setStatus("running");
-  }, [status, remaining, level, testSeconds]);
+  }, [status, remaining, level, testSeconds, slug]);
 
   const pause = useCallback(() => {
     if (!endAt) return;

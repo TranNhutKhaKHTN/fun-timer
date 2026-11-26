@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Baloo_2 } from "next/font/google";
+import Script from "next/script";
+import { GA_ENABLED, GA_ID } from "@/lib/analytics";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -21,7 +23,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi">
-      <body className={`${baloo.variable} antialiased`}>{children}</body>
+      <body className={`${baloo.variable} antialiased`}>
+        {children}
+        {GA_ENABLED && (
+          <>
+            {/* Google Analytics 4: tự ghi nhận lượt xem trang, kể cả khi chuyển trang trong app */}
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+            </Script>
+          </>
+        )}
+      </body>
     </html>
   );
 }

@@ -6,6 +6,7 @@ import Celebration from "./Celebration";
 import ExitDialog from "./ExitDialog";
 import LuckyScene from "./scenes/LuckyScene";
 import { useExitGuard } from "@/hooks/useExitGuard";
+import { trackEvent } from "@/lib/analytics";
 import { testBadgeText, useTestSeconds } from "@/hooks/useTestMode";
 import { formatTime, playFanfare, playFirework, unlockAudio } from "@/lib/timer-utils";
 import { LEVELS, getTimer } from "@/lib/timers";
@@ -139,9 +140,10 @@ export default function LuckyRunner({ slug }: { slug: string }) {
       if (hit) {
         setCelebrate(true);
         playFanfare(audioRef.current);
+        trackEvent("timer_complete", { timer: slug, level: timer.level, digits: String(target).length });
       }
     }, SPIN_MS);
-  }, [elapsedMs, status, target, rolls, testSeconds]);
+  }, [elapsedMs, status, target, rolls, testSeconds, slug, timer.level]);
 
   // Tiêu đề tab
   useEffect(() => {
@@ -184,11 +186,12 @@ export default function LuckyRunner({ slug }: { slug: string }) {
     setInputError("");
     clearRound();
     setTarget(n);
+    trackEvent("timer_start", { timer: slug, level: timer.level, digits: String(n).length, test: testSeconds != null });
     const t = Date.now();
     setStartedAt(t);
     setNow(t);
     setStatus("running");
-  }, [status, input]);
+  }, [status, input, testSeconds, slug, timer.level]);
 
   const pause = useCallback(() => {
     if (!startedAt) return;
